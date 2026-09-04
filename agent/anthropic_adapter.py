@@ -824,7 +824,11 @@ def build_anthropic_client(
         # OAuth access token / setup-token → Bearer auth + Claude Code identity.
         # Anthropic routes OAuth requests based on user-agent and headers;
         # without Claude Code's fingerprint, requests get intermittent 500s.
-        all_betas = common_betas + _OAUTH_ONLY_BETAS
+        # PMBE 2026-09-03: upstream still does not send the 1M-context beta on
+        # native OAuth (only Azure/Bedrock paths get it) — verified empirically
+        # again today: Max-20x sub ACCEPTS the beta with the CC fingerprint.
+        # Reactive recovery (PR #17680) handles any subscription that rejects it.
+        all_betas = common_betas + _OAUTH_ONLY_BETAS + [_CONTEXT_1M_BETA]
         kwargs["auth_token"] = api_key
         kwargs["default_headers"] = {
             "anthropic-beta": ",".join(all_betas),
